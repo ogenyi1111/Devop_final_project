@@ -1,52 +1,53 @@
 pipeline {
     agent any
-    
+
     environment {
-        // Define environment variables
         DOCKER_IMAGE = 'your-app-image'
         DOCKER_TAG = 'latest'
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
-                // Checkout code from repository
                 checkout scm
             }
         }
-        
+
         stage('Build') {
             steps {
-                // Build your application
-                sh 'mvn clean package'
+                script {
+                    runCommand('mvn clean package')
+                }
             }
         }
-        
+
         stage('Test') {
             steps {
-                // Run tests
-                sh 'mvn test'
+                script {
+                    runCommand('mvn test')
+                }
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
-                // Build Docker image
-                sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                script {
+                    runCommand("docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .")
+                }
             }
         }
-        
+
         stage('Deploy') {
             steps {
-                // Deploy your application
-                sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                script {
+                    runCommand("docker push ${DOCKER_IMAGE}:${DOCKER_TAG}")
+                }
             }
         }
     }
-    
+
     post {
         always {
-            // Clean up workspace
             cleanWs()
         }
         success {
@@ -56,4 +57,13 @@ pipeline {
             echo 'Pipeline failed!'
         }
     }
-} 
+}
+
+// Helper function to handle OS differences
+def runCommand(String command) {
+    if (isUnix()) {
+        sh command
+    } else {
+        bat command
+    }
+}
